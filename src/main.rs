@@ -1,12 +1,13 @@
+mod chat_state;
 mod config;
+use crate::chat_state::ChatState;
 use crate::config::Config;
 use rig::completion::Chat;
 use rig::message::{AssistantContent, Message, UserContent};
-use std::io::stdin;
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let mut config = Config::from_env();
-    let mut chat_history = Vec::<Message>::new();
+    let mut chat = ChatState::new();
     let mut agent = config.build_agent();
     let width = 100;
     println!(
@@ -16,23 +17,20 @@ async fn main() -> Result<(), anyhow::Error> {
     );
     println!("{}", "=".repeat(width));
     println!("Type a message and click enter to submit");
-    let mut user_input = String::new();
     loop {
         println!("{}", "=".repeat(width));
-        stdin().read_line(&mut user_input)?;
+        chat.get_input();
         // ======================================
         //              /exit
         // ======================================
-        if user_input.trim().contains("/exit") {
-            if !chat_history.is_empty() {
-                let exit_prompt = Message::assistant(
-                    "The user is requesting to exit with the /exit command. Please bid them farewell in a way that reflects the contents of this chat.",
-                );
-                if let Ok(response) = agent.chat(exit_prompt.clone(), chat_history.clone()).await {
+        if chat.input().contains("/exit") {
+            if !chat.history().is_empty() {
+                let exit_prompt = "The user is requesting to exit with the /exit command. Please bid them farewell in a way that reflects the contents of this chat";
+                if let Ok(response) = agent.chat(exit_prompt, chat.history().to_owned()).await {
                     println!("{}", "=".repeat(width));
                     println!("{}: {}", config.model(), response);
-                    chat_history.push(exit_prompt);
-                    chat_history.push(Message::assistant(response));
+                    chat.record_assistant_message(exit_prompt);
+                    chat.record_assistant_message(response);
                 }
             }
             break;
@@ -40,22 +38,22 @@ async fn main() -> Result<(), anyhow::Error> {
         // ======================================
         //              /model
         // ======================================
-        if user_input.trim().contains("/model") {
+        if chat.input().contains("/model") {
             println!("{}", "=".repeat(width));
-            user_input.clear();
+            chat.clear_input();
             println!("Current model: {}. Select a model below", config.model());
             for (i, model) in config.model_options().iter().enumerate() {
                 println!("{}. {}", i + 1, model);
             }
             println!("{}", "=".repeat(width));
             loop {
-                stdin().read_line(&mut user_input)?;
+                chat.get_input();
                 let Some(selection) = config
                     .model_options()
                     .iter()
                     .enumerate()
                     .find(|(i, _)| {
-                        user_input
+                        chat.input()
                             .trim()
                             .parse::<usize>()
                             .is_ok_and(|u| u - 1 == *i)
@@ -64,7 +62,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 else {
                     continue;
                 };
-                user_input.clear();
+                chat.clear_input();
                 config.set_model(selection);
                 agent = config.build_agent();
                 println!("Model updated to: {}", config.model());
@@ -78,9 +76,9 @@ async fn main() -> Result<(), anyhow::Error> {
         // ======================================
         //             /history
         // ======================================
-        if user_input.trim().contains("/history") {
-            if chat_history.is_empty() {
-                user_input.clear();
+        if chat.input().contains("/history") {
+            if chat.history().is_empty() {
+                chat.clear_input();
                 println!("{}", "=".repeat(width));
                 println!("No chat history to show");
                 continue;
@@ -88,9 +86,14 @@ async fn main() -> Result<(), anyhow::Error> {
             println!("{}", "=".repeat(width));
             println!("Showing last {} messages", HISTORY_LEN);
             println!("{}", "=".repeat(width));
-            user_input.clear();
-            let history_to_show: Vec<_> =
-                chat_history.iter().rev().take(HISTORY_LEN).rev().collect();
+            chat.clear_input();
+            let history_to_show: Vec<_> = chat
+                .history()
+                .iter()
+                .rev()
+                .take(HISTORY_LEN)
+                .rev()
+                .collect();
             for (i, message) in history_to_show.iter().enumerate() {
                 match message {
                     Message::User { content } => match content.first() {
@@ -139,18 +142,18 @@ async fn main() -> Result<(), anyhow::Error> {
         // ======================================
         //              /clear
         // ======================================
-        if user_input.trim() == "/clear" {
+        if chat.input() == "/clear" {
             println!("{}", "=".repeat(width));
             println!("Clearing chat history");
-            chat_history.clear();
-            user_input.clear();
+            chat.clear_history();
+            chat.clear_input();
             continue;
         }
         // ======================================
         //              /help
         // ======================================
-        if user_input.trim() == "/help" {
-            user_input.clear();
+        if chat.input() == "/help" {
+            chat.clear_input();
             println!("{}", "=".repeat(width));
             println!("Commands: ");
             println!("/model - switch models");
@@ -163,52 +166,50 @@ async fn main() -> Result<(), anyhow::Error> {
         // ======================================
         //          /summarize
         // ======================================
-        if user_input.trim().contains("/summarize") {
-            user_input.clear();
-            if !chat_history.is_empty() {
-                let summarize_prompt = Message::assistant(
-                    "The user is requesting a summary of the conversation up to this point with the /summary command. Please respond with a brief summary of the conversation",
-                );
+        if chat.input() == "/summarize" {
+            chat.clear_input();
+            if !chat.history().is_empty() {
+                let summarize_prompt = "The user is requesting a summary of the conversation up to this point with the /summary command. Please respond with a brief summary of the conversation";
                 match agent
-                    .chat(summarize_prompt.clone(), chat_history.clone())
+                    .chat(summarize_prompt, chat.history().to_owned())
                     .await
                 {
                     Ok(response) => {
                         println!("{}", "=".repeat(width));
                         println!("{}: {}", config.model(), response);
-                        chat_history.push(summarize_prompt);
-                        chat_history.push(Message::assistant(response));
+                        chat.record_assistant_message(summarize_prompt);
+                        chat.record_assistant_message(response);
                     }
                     Err(e) => {
                         eprint!("Error: {}", e);
-                        println!("Please try again.");
+                        println!("Please try again");
                     }
                 }
             } else {
-                println!("Nothing to summarize.");
+                println!("Nothing to summarize");
             }
             continue;
         }
         // ======================================
         //          regular message
         // ======================================
-        if user_input.trim().is_empty() {
-            user_input.clear();
+        if chat.input().is_empty() {
+            chat.clear_input();
             println!("Type a message and click enter to submit");
             continue;
         }
-        let user_message = Message::user(&user_input);
-        user_input.clear();
-        match agent.chat(user_message.clone(), chat_history.clone()).await {
+        let user_input = chat.input().to_owned();
+        chat.clear_input();
+        match agent.chat(chat.input(), chat.history().to_owned()).await {
             Ok(response) => {
                 println!("{}", "=".repeat(width));
                 println!("{}: {}", config.model(), response);
-                chat_history.push(user_message);
-                chat_history.push(Message::assistant(response));
+                chat.record_user_message(user_input);
+                chat.record_assistant_message(response);
             }
             Err(e) => {
                 eprintln!("Error: {}", e);
-                println!("Please try again.");
+                println!("Please try again");
             }
         }
     }
