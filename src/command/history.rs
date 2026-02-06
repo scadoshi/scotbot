@@ -1,13 +1,13 @@
 use rig::message::{AssistantContent, Message, UserContent};
 
-use crate::{commands::Command, ui::horizontal_line};
+use crate::{command::Command, ui::horizontal_line};
 
 pub const HISTORY_LEN: usize = 10;
 
 pub struct History;
 
 impl Command for History {
-    async fn execute(state: &mut crate::chat::State) -> anyhow::Result<()> {
+    fn execute(state: &mut crate::chat::State) -> anyhow::Result<()> {
         const TRUNCATE_AT: usize = 300;
         if state.history().is_empty() {
             state.clear_input();

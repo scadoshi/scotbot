@@ -32,7 +32,7 @@ where
         } else if value.is_empty() {
             Self::Empty
         } else {
-            Self::Message(value.into())
+            Self::Message(value)
         }
     }
 }

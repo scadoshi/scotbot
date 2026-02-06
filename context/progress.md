@@ -26,3 +26,50 @@
 
 ### Ideas for next time
 - Streaming responses — next Rig API surface worth exploring.
+
+## Session 2 — 2026-02-05
+
+### What was done
+- Extracted configuration logic into `Config` module — removed model management from Config, simplified to just preamble and API key storage.
+- Added `/summarize` command — asks the agent to summarize the conversation history.
+- Created `ChatState` module to encapsulate chat history and user input management.
+- Major architectural refactor: implemented command pattern with individual command modules (`commands/exit.rs`, `commands/model.rs`, etc.).
+- Created `Input` enum for clean command routing and pattern matching.
+- Extracted `Runner` module to handle main loop logic, separated from `main.rs`.
+- Created `ui` module for shared UI utilities (`horizontal_line()`).
+- Fixed integer underflow bug in model selection (input "0" would panic).
+- Fixed input handling to preserve input across command interruptions (allows breaking out of `/model` selection to handle other commands).
+
+### What was learned
+- Command pattern in Rust: each command implements `Command` trait with async `execute()` method.
+- Module organization: separating concerns into `chat/`, `commands/`, `runner`, `config`, and `ui`.
+- Using enums for input routing makes the main loop clean and exhaustive.
+- `checked_sub()` for safe integer arithmetic to avoid underflow panics.
+- How to handle nested input loops (model selection) while preserving input state for parent loop.
+
+### Architecture evolution
+- **Before**: Monolithic `main.rs` with all logic inline (~220 lines).
+- **After**:
+  - `main.rs`: 13 lines, just bootstraps `Runner::run()`.
+  - `chat/mod.rs`: `State` struct managing history, input, agent, model.
+  - `chat/input.rs`: `Input` enum for command parsing.
+  - `commands/`: Individual modules per command implementing `Command` trait.
+  - `runner.rs`: Main loop logic with pattern matching on `Input`.
+  - `config.rs`: Environment config (preamble, API key).
+  - `ui.rs`: UI utilities.
+
+### Polish & documentation
+- Updated `README.md` with all available commands.
+- Reorganized context files: `project.md` → `purpose.md`, moved commit guidelines to `context/commit_guidelines.md`.
+- Refined `purpose.md` to focus on AI assistant rules and project philosophy (no code writing, educational first).
+
+### Refinements
+- Simplified `/exit` command — removed AI-generated farewell, now just prints "Farewell!" and breaks the loop.
+- Split `Command` trait into `Command` (sync) and `AsyncCommand` (async) to reduce compile times for commands that don't need async.
+- Updated UI styling: width from 100 to 50, horizontal line from `=` to `-`.
+- Alphabetized command matching in runner for better organization.
+
+### Ideas for next time
+- Streaming responses — explore Rig's streaming API for real-time output.
+- Tool use / function calling — if Rig supports it, add tools the agent can call.
+- Export/import chat — save and load conversation history to/from JSON.

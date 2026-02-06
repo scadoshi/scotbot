@@ -1,13 +1,13 @@
 use crate::{
     chat::{self, input::Input},
-    commands::Command,
+    command::Command,
     ui::horizontal_line,
 };
 
 pub struct Model;
 
 impl Command for Model {
-    async fn execute(state: &mut chat::State) -> anyhow::Result<()> {
+    fn execute(state: &mut chat::State) -> anyhow::Result<()> {
         horizontal_line();
         state.clear_input();
         println!("Current model: {}", state.model());
@@ -24,7 +24,13 @@ impl Command for Model {
                         .model_options()
                         .iter()
                         .enumerate()
-                        .find(|(i, _)| message.parse::<usize>().is_ok_and(|u| u - 1 == *i))
+                        .find(|(i, _)| {
+                            message
+                                .parse::<usize>()
+                                .ok()
+                                .and_then(|u| u.checked_sub(1))
+                                .is_some_and(|u| u == *i)
+                        })
                         .map(|(_, selection)| selection.to_owned())
                     else {
                         continue;

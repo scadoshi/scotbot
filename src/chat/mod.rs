@@ -33,6 +33,7 @@ impl State {
             String::from(CLAUDE_4_OPUS),
             String::from(CLAUDE_4_SONNET),
         ];
+        assert!(!model_options.is_empty());
         let model = CLAUDE_3_5_HAIKU.to_string();
         let agent = config.build_agent(&model);
         let history = Vec::new();

@@ -1,7 +1,7 @@
 use crate::runner::Runner;
 
 mod chat;
-mod commands;
+mod command;
 mod config;
 mod runner;
 mod ui;

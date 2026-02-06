@@ -1,8 +1,8 @@
-use crate::{commands::Command, ui::horizontal_line};
+use crate::{command::AsyncCommand, ui::horizontal_line};
 
 pub struct Summarize;
 
-impl Command for Summarize {
+impl AsyncCommand for Summarize {
     async fn execute(state: &mut crate::chat::State) -> anyhow::Result<()> {
         state.clear_input();
         if !state.history().is_empty() {

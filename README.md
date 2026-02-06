@@ -10,7 +10,12 @@ Runs an interactive terminal chat loop backed by Anthropic's Claude via Rig. Sup
 
 | Command | Description |
 |---------|-------------|
-| `/exit` | Ends the session. If there's chat history, the model generates a farewell first. |
+| `/model` | Switch between available Claude models |
+| `/history` | Show last 10 messages from chat history |
+| `/summarize` | Ask the agent to summarize the conversation |
+| `/clear` | Clear chat history |
+| `/help` | List all available commands |
+| `/exit` | Print farewell message and end the session |
 
 ## Setup
 

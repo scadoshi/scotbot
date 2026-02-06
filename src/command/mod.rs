@@ -8,5 +8,9 @@ pub mod summarize;
 use crate::chat;
 
 pub trait Command {
+    fn execute(state: &mut chat::State) -> anyhow::Result<()>;
+}
+
+pub trait AsyncCommand {
     fn execute(state: &mut chat::State) -> impl Future<Output = anyhow::Result<()>>;
 }
