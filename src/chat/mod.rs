@@ -6,8 +6,7 @@ use rig::{
     completion::Chat,
     message::Message,
     providers::anthropic::completion::{
-        CLAUDE_3_5_HAIKU, CLAUDE_3_5_SONNET, CLAUDE_3_7_SONNET, CLAUDE_4_OPUS, CLAUDE_4_SONNET,
-        CompletionModel,
+        CompletionModel, CLAUDE_3_5_HAIKU, CLAUDE_4_OPUS, CLAUDE_4_SONNET,
     },
 };
 use std::io::stdin;
@@ -27,9 +26,6 @@ impl State {
         let config = Config::from_env();
         let model_options = vec![
             String::from(CLAUDE_3_5_HAIKU),
-            String::from(CLAUDE_3_5_HAIKU),
-            String::from(CLAUDE_3_5_SONNET),
-            String::from(CLAUDE_3_7_SONNET),
             String::from(CLAUDE_4_OPUS),
             String::from(CLAUDE_4_SONNET),
         ];
