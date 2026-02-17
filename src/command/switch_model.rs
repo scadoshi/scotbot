@@ -1,27 +1,28 @@
 use crate::{
     chat::{self, input::Input},
-    command::Command,
     ui::horizontal_line,
 };
 
-pub struct Model;
+pub trait SwitchModel {
+    fn switch_model(&mut self) -> anyhow::Result<()>;
+}
 
-impl Command for Model {
-    fn execute(state: &mut chat::State) -> anyhow::Result<()> {
+impl SwitchModel for chat::State {
+    fn switch_model(&mut self) -> anyhow::Result<()> {
         horizontal_line();
-        state.clear_input();
-        println!("Current model: {}", state.model());
-        for (i, model) in state.model_options().iter().enumerate() {
+        self.clear_input();
+        println!("Current model: {}", self.model());
+        for (i, model) in self.model_options().iter().enumerate() {
             println!("{}. {}", i + 1, model.display_name);
         }
         horizontal_line();
         loop {
             println!("Select a model");
             horizontal_line();
-            state.get_input();
-            match state.input() {
+            self.get_input();
+            match self.input() {
                 Input::Message(message) => {
-                    let Some(selection) = state
+                    let Some(selection) = self
                         .model_options()
                         .iter()
                         .enumerate()
@@ -36,9 +37,9 @@ impl Command for Model {
                     else {
                         continue;
                     };
-                    state.clear_input();
-                    state.set_agent(selection)?;
-                    println!("Model updated: {}", state.model());
+                    self.clear_input();
+                    self.set_agent(selection)?;
+                    println!("Model updated: {}", self.model());
                     break;
                 }
                 _ => break, // any other command should go to main loop for triaging

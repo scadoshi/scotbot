@@ -1,8 +1,12 @@
 use crate::chat::{input::Input, State};
-use crate::command::{
-    clear::Clear, compact::Compact, exit::Exit, help::Help, history::History, model::Model,
-    summarize::Summarize, tokens::Tokens, AsyncCommand, Command,
-};
+use crate::command::clear_context::ClearContext;
+use crate::command::compact_context::CompactContext;
+use crate::command::exit_process::ExitProcess;
+use crate::command::show_help_message::ShowHelpMessage;
+use crate::command::show_message_history::ShowMessageHistory;
+use crate::command::show_token_usage::ShowTokenUsage;
+use crate::command::summarize_context::SummarizeContext;
+use crate::command::switch_model::SwitchModel;
 use crate::ui::horizontal_line;
 use rig::message::Message;
 
@@ -21,36 +25,36 @@ impl Runner {
             }
             match state.input() {
                 Input::ClearCommand => {
-                    Clear::execute(&mut state)?;
+                    state.clear_context()?;
                     continue;
                 }
                 Input::HelpCommand => {
-                    Help::execute(&mut state)?;
+                    state.show_help_message();
                     continue;
                 }
                 Input::HistoryCommand => {
-                    History::execute(&mut state)?;
+                    state.show_message_history();
                     continue;
                 }
                 Input::TokensCommand => {
-                    Tokens::execute(&mut state)?;
+                    state.show_token_usage();
                     continue;
                 }
                 Input::ModelCommand => {
-                    Model::execute(&mut state)?;
+                    state.switch_model()?;
                     continue;
                 }
                 Input::SummarizeCommand => {
-                    Summarize::execute(&mut state).await?;
+                    state.summarize_context().await?;
                     continue;
                 }
                 Input::CompactCommand => {
-                    Compact::execute(&mut state).await?;
+                    state.compact_context().await?;
                     continue;
                 }
                 Input::Empty => continue,
                 Input::ExitCommand => {
-                    Exit::execute(&mut state)?;
+                    state.exit_process();
                     break;
                 }
                 Input::Message(message) => {

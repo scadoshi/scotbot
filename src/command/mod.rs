@@ -1,18 +1,8 @@
-pub mod clear;
-pub mod compact;
-pub mod exit;
-pub mod help;
-pub mod history;
-pub mod model;
-pub mod summarize;
-pub mod tokens;
-
-use crate::chat;
-
-pub trait Command {
-    fn execute(state: &mut chat::State) -> anyhow::Result<()>;
-}
-
-pub trait AsyncCommand {
-    fn execute(state: &mut chat::State) -> impl Future<Output = anyhow::Result<()>>;
-}
+pub mod clear_context;
+pub mod compact_context;
+pub mod exit_process;
+pub mod show_help_message;
+pub mod show_message_history;
+pub mod show_token_usage;
+pub mod summarize_context;
+pub mod switch_model;
