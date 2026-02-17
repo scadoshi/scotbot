@@ -160,3 +160,36 @@
 - Export/import history — serialize `Vec<Message>` to JSON
 - Tool calling — let agent invoke existing commands (`/clear`, `/history`, `/summarize`)
 - Contribute `ModelListingClient` for Anthropic to Rig
+
+## Session 4 (continued) — 2026-02-16
+
+### What was done
+- Added `/compact` command — clears history and replaces with AI-generated context summary
+- Implemented dynamic model discovery from Anthropic's `/v1/models` API
+- Created `anthropic` module with `GetAnthropicModels` trait and `ModelInfo` struct
+- Redesigned startup flow — model selection required before chat begins
+- Added `welcome_message()` with loading animation in `ui` module
+- Removed hardcoded model constants in favor of API-fetched list
+- Refactored `State` — removed `model` field, derives current model from `agent.model.model`
+- Simplified `Config` — removed `build_agent()` method
+- Fixed stdout buffering issue — `print!()` without newline requires `flush()` for immediate display
+
+### What was learned
+- Stdout is line-buffered by default — `print!()` accumulates until newline or manual `flush()`
+- RPITIT (Return Position Impl Trait In Trait) — `impl Future` in trait signatures works without importing `Future` since Rust 1.75
+- `std::thread::sleep` blocks tokio runtime — use `tokio::time::sleep` in async contexts (acceptable for one-time startup animation)
+- Anthropic's `/v1/models` endpoint returns `id`, `display_name`, `created_at`, `type` for each model
+
+### New dependencies
+- `reqwest` — HTTP client for Anthropic API calls
+- `serde` + `serde_json` — JSON deserialization for API responses
+
+### Architecture changes
+- `State::new()` is now `async` and fallible
+- Agent building moved from `Config` to `State` (inline in `new()` and `set_agent()`)
+- Model selection happens at startup, not defaulted
+
+### Ideas for next time
+- Tool calling — let agent invoke `/clear`, `/history`, `/summarize`, `/compact`
+- Export/import history — `/export <file>` and `/import <file>` for JSON persistence
+- `/cost` command — estimate cost based on token usage and model pricing

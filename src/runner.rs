@@ -1,9 +1,7 @@
 use crate::chat::{input::Input, State};
-use crate::command::compact::Compact;
-use crate::command::tokens::Tokens;
 use crate::command::{
-    clear::Clear, exit::Exit, help::Help, history::History, model::Model, summarize::Summarize,
-    AsyncCommand, Command,
+    clear::Clear, compact::Compact, exit::Exit, help::Help, history::History, model::Model,
+    summarize::Summarize, tokens::Tokens, AsyncCommand, Command,
 };
 use crate::ui::horizontal_line;
 use rig::message::Message;
@@ -12,11 +10,8 @@ pub struct Runner;
 
 impl Runner {
     pub async fn run(mut state: State) -> anyhow::Result<()> {
-        println!(
-            "Your AI Agent ({}) Preamble: {}",
-            state.model(),
-            state.config().preamble()
-        );
+        println!("Agent: {}", state.model());
+        println!("Preamble: {}", state.config().preamble());
         horizontal_line();
         println!("Type a message and click enter to submit");
         loop {

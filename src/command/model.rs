@@ -12,11 +12,12 @@ impl Command for Model {
         state.clear_input();
         println!("Current model: {}", state.model());
         for (i, model) in state.model_options().iter().enumerate() {
-            println!("{}. {}", i + 1, model);
+            println!("{}. {}", i + 1, model.display_name);
         }
         horizontal_line();
         loop {
             println!("Select a model");
+            horizontal_line();
             state.get_input();
             match state.input() {
                 Input::Message(message) => {
@@ -36,8 +37,7 @@ impl Command for Model {
                         continue;
                     };
                     state.clear_input();
-                    state.set_model(selection);
-                    state.refresh_agent();
+                    state.set_agent(selection)?;
                     println!("Model updated: {}", state.model());
                     break;
                 }

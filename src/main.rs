@@ -1,5 +1,6 @@
 use crate::runner::Runner;
 
+mod anthropic;
 mod chat;
 mod command;
 mod config;
@@ -8,6 +9,8 @@ mod ui;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    Runner::run(chat::State::new()).await?;
+    ui::welcome_message()?;
+    let state = chat::State::new().await?;
+    Runner::run(state).await?;
     Ok(())
 }

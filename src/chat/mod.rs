@@ -1,24 +1,29 @@
 pub mod input;
 
-use crate::{chat::input::Input, config::Config, ui::horizontal_line};
+use crate::{
+    anthropic::{GetAnthropicModels, ModelInfo},
+    chat::input::Input,
+    config::Config,
+    ui::horizontal_line,
+};
 use futures::StreamExt;
 use rig::{
     agent::{Agent, MultiTurnStreamItem},
+    client::CompletionClient,
     completion::Chat,
     message::Message,
     providers::anthropic::{
-        completion::{CompletionModel, CLAUDE_3_5_HAIKU, CLAUDE_4_OPUS, CLAUDE_4_SONNET},
+        completion::CompletionModel,
         streaming::{PartialUsage, StreamingCompletionResponse},
+        Client,
     },
     streaming::{StreamedAssistantContent, StreamingChat},
 };
 use std::io::stdin;
 
-#[derive(Clone)]
 pub struct State {
     config: Config,
-    model_options: Vec<String>,
-    model: String,
+    model_options: Vec<ModelInfo>,
     agent: Agent<CompletionModel>,
     history: Vec<Message>,
     input: Input,
@@ -27,42 +32,67 @@ pub struct State {
 }
 
 impl State {
-    pub fn new() -> Self {
-        let config = Config::from_env();
-        let model_options = vec![
-            String::from(CLAUDE_3_5_HAIKU),
-            String::from(CLAUDE_4_OPUS),
-            String::from(CLAUDE_4_SONNET),
-        ];
-        assert!(!model_options.is_empty());
-        let model = CLAUDE_3_5_HAIKU.to_string();
-        let agent = config.build_agent(&model);
-        Self {
+    pub async fn new() -> anyhow::Result<Self> {
+        let config = Config::from_env()?;
+        let model_options = config.get_models().await?;
+        let agent: Agent<CompletionModel>;
+        let mut input = String::new();
+        println!("Current model: not set");
+        for (i, model) in model_options.iter().enumerate() {
+            println!("{}. {}", i + 1, model.display_name);
+        }
+        horizontal_line();
+        loop {
+            println!("Select a model");
+            horizontal_line();
+            stdin().read_line(&mut input)?;
+            if let Some((_, ModelInfo { id, .. })) = model_options
+                .iter()
+                .enumerate()
+                .find(|(i, _)| (i + 1).to_string() == input.trim())
+            {
+                agent = Client::new(config.anthropic_api_key())?
+                    .agent(id)
+                    .preamble(config.preamble())
+                    .build();
+                horizontal_line();
+                break;
+            } else if input.trim() == "/exit" {
+                println!("Farewell!");
+                std::process::exit(0);
+            } else {
+                input.clear();
+            }
+        }
+        Ok(Self {
             config,
             model_options,
-            model,
             agent,
             history: Vec::new(),
             input: Input::new(),
             total_input_tokens_used: 0,
             total_output_tokens_used: 0,
-        }
-    }
-    pub fn refresh_agent(&mut self) {
-        self.agent = self.config().build_agent(self.model());
+        })
     }
     pub fn config(&self) -> &Config {
         &self.config
     }
-    pub fn model_options(&self) -> &[String] {
+    pub fn model_options(&self) -> &[ModelInfo] {
         self.model_options.as_slice()
     }
     pub fn model(&self) -> &str {
-        &self.model
+        self.model_options()
+            .iter()
+            .find(|model| model.id == self.agent.model.model)
+            .map(|model| model.display_name.as_str())
+            .unwrap_or("")
     }
-    pub fn set_model(&mut self, model: impl Into<String>) -> &mut Self {
-        self.model = model.into();
-        self
+    pub fn set_agent(&mut self, model: ModelInfo) -> anyhow::Result<()> {
+        self.agent = Client::new(self.config().anthropic_api_key())?
+            .agent(model.id)
+            .preamble(self.config().preamble())
+            .build();
+        Ok(())
     }
     pub async fn send(&mut self, message: impl Into<Message>) -> anyhow::Result<String> {
         let message = message.into();
