@@ -21,7 +21,7 @@ impl SwitchModel for chat::State {
             horizontal_line();
             self.get_input();
             match self.input() {
-                Input::Message(message) => {
+                Input::SendMessage(message) => {
                     let Some(selection) = self
                         .model_options()
                         .iter()

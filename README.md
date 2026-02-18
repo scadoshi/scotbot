@@ -4,7 +4,7 @@ A small CLI chat application built to learn the [Rig](https://github.com/21-labs
 
 ## What it does
 
-Runs an interactive terminal chat loop backed by Anthropic's Claude via Rig. Supports a configurable preamble (system prompt) loaded from a `.env` file and maintains conversation history across turns.
+Runs an interactive terminal chat loop backed by Anthropic's Claude via Rig. Supports a configurable preamble (system prompt) in `src/chat/preamble.txt` and maintains conversation history across turns.
 
 ### Commands
 
@@ -13,6 +13,8 @@ Runs an interactive terminal chat loop backed by Anthropic's Claude via Rig. Sup
 | `/model` | Switch between available Claude models |
 | `/tokens` | Show token usage |
 | `/history` | Show last 10 messages from chat history |
+| `/save` | Save chat history to file |
+| `/import <id>` | Import chat history from a saved file |
 | `/summarize` | Ask the agent to summarize the conversation |
 | `/compact` | Condense conversation history |
 | `/clear` | Clear chat history |

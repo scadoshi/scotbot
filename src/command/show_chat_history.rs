@@ -4,12 +4,12 @@ use crate::{chat, ui::horizontal_line};
 
 pub const HISTORY_LEN: usize = 10;
 
-pub trait ShowMessageHistory {
-    fn show_message_history(&mut self);
+pub trait ShowChatHistory {
+    fn show_chat_history(&mut self);
 }
 
-impl ShowMessageHistory for chat::State {
-    fn show_message_history(&mut self) {
+impl ShowChatHistory for chat::State {
+    fn show_chat_history(&mut self) {
         const TRUNCATE_AT: usize = 300;
         if self.history().is_empty() {
             self.clear_input();

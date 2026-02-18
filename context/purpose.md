@@ -1,7 +1,7 @@
-# Purpose — scotbot
+# Purpose — marvin
 
 ## What this project is
-scotbot is a personal learning project for understanding the Rig framework. The goal is to learn by building a real CLI chatbot application, exploring Rig's APIs incrementally through implementing features.
+marvin is a personal learning project for understanding the Rig framework. The goal is to learn by building a real CLI chatbot application, exploring Rig's APIs incrementally through implementing features.
 
 ## Why this project exists
 - **Learn Rig framework** — understand how Rig works by building with it, not just reading docs
@@ -11,7 +11,7 @@ scotbot is a personal learning project for understanding the Rig framework. The 
 
 ## Tech stack
 - **Language:** Rust (2024 edition)
-- **AI framework:** rig-core 0.29.0
+- **AI framework:** rig-core 0.31.0
 - **Provider:** Anthropic (Claude)
 - **Async runtime:** Tokio
 
@@ -19,7 +19,8 @@ scotbot is a personal learning project for understanding the Rig framework. The 
 - **CLI REPL** — user types messages and commands, agent responds
 - **Command pattern** — each command (`/model`, `/history`, etc.) is a separate module
 - **Chat state** — manages conversation history, current input, and agent instance
-- **Config** — loads environment variables (API key, preamble)
+- **Config** — loads environment variables (API key)
+- **Preamble** — system prompt loaded from `src/chat/preamble.txt` at compile time
 
 ## AI assistant rules
 

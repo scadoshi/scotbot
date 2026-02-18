@@ -2,10 +2,12 @@ use crate::chat::{input::Input, State};
 use crate::command::clear_context::ClearContext;
 use crate::command::compact_context::CompactContext;
 use crate::command::exit_process::ExitProcess;
+use crate::command::import_chat_history::ImportChatHistory;
+use crate::command::save_chat_history::SaveChatHistory;
+use crate::command::show_chat_history::ShowChatHistory;
+use crate::command::show_context_summary::ShowContextSummary;
 use crate::command::show_help_message::ShowHelpMessage;
-use crate::command::show_message_history::ShowMessageHistory;
 use crate::command::show_token_usage::ShowTokenUsage;
-use crate::command::summarize_context::SummarizeContext;
 use crate::command::switch_model::SwitchModel;
 use crate::ui::horizontal_line;
 use rig::message::Message;
@@ -19,45 +21,53 @@ impl Runner {
         println!("Type a message and click enter to submit");
         loop {
             horizontal_line();
-            if state.input().is_empty() {
+            if state.input().is_none() {
                 state.get_input();
             }
             match state.input() {
-                Input::ClearCommand => {
+                Input::ClearContext => {
                     state.clear_context()?;
                     continue;
                 }
-                Input::HelpCommand => {
+                Input::ShowHelpMessage => {
                     state.show_help_message();
                     continue;
                 }
-                Input::HistoryCommand => {
-                    state.show_message_history();
+                Input::ShowChatHistory => {
+                    state.show_chat_history();
                     continue;
                 }
-                Input::TokensCommand => {
+                Input::SaveChatHistory => {
+                    state.save_chat_history()?;
+                    continue;
+                }
+                Input::ImportChatHistory(id) => {
+                    state.import_chat_history(*id);
+                    continue;
+                }
+                Input::ShowTokenUsage => {
                     state.show_token_usage();
                     continue;
                 }
-                Input::ModelCommand => {
+                Input::SwitchModel => {
                     state.switch_model()?;
                     continue;
                 }
-                Input::SummarizeCommand => {
-                    state.summarize_context().await?;
+                Input::ShowContextSummary => {
+                    state.show_context_summary().await?;
                     continue;
                 }
-                Input::CompactCommand => {
+                Input::CompactContext => {
                     state.compact_context().await?;
                     continue;
                 }
-                Input::Empty => continue,
-                Input::ExitCommand => {
-                    state.exit_process();
+                Input::None => continue,
+                Input::ExitProcess => {
+                    state.exit_process()?;
                     break;
                 }
-                Input::Message(message) => {
-                    if state.input().is_empty() {
+                Input::SendMessage(message) => {
+                    if message.is_empty() {
                         println!("Type a message and click enter");
                         state.clear_input();
                         continue;

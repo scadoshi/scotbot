@@ -193,3 +193,41 @@
 - Tool calling — let agent invoke `/clear`, `/history`, `/summarize`, `/compact`
 - Export/import history — `/export <file>` and `/import <file>` for JSON persistence
 - `/cost` command — estimate cost based on token usage and model pricing
+
+## Session 5 — 2026-02-17
+
+### What was done
+- Renamed project from "scotbot" to "marvin"
+- Moved preamble from `.env` to `src/chat/preamble.txt` — loaded at compile time via `include_str!()`
+- Created Marvin preamble as a Rust learning companion that asks multiple choice questions
+- Added `/save` command — persists chat history to `chats/<id>.json`
+- Added `/import <id>` command — loads previous chat session history into current context
+- Each chat session now gets a unique `u16` ID, displayed at startup
+- Renamed `Input` enum variants for consistency with command file names (e.g., `ExitCommand` → `ExitProcess`)
+- Renamed command files for consistency (`show_message_history.rs` → `show_chat_history.rs`, `summarize_context.rs` → `show_context_summary.rs`)
+- Updated README and help messages to document new commands
+- Added `chats/` directory to `.gitignore`
+
+### What was learned
+- Using `HashSet` for efficient ID lookup when finding next available chat ID
+- `std::path::Path::file_prefix()` for getting filename without extension
+- `std::fs::create_dir_all()` for ensuring directory exists before writing
+- Importance of consistent naming between enums and module files — reduces cognitive load
+- `serde_json::to_writer_pretty()` for human-readable JSON output
+
+### Architecture changes
+- `State` now holds a `u16` ID field for the current chat session
+- `next_chat_id()` scans `chats/` directory to find first unused ID
+- `Config` simplified — no longer holds preamble (removed `preamble()` method)
+- Preamble is now a `static` string compiled into the binary
+- `welcome_message()` moved earlier in startup, now displays chat ID
+
+### Refactoring
+- `Input::Empty` → `Input::None`, `is_empty()` → `is_none()`
+- `Input::Message` → `Input::SendMessage`
+- All command-related enum variants now match their file names exactly
+
+### Ideas for next time
+- Tool calling — let agent invoke commands based on conversation context
+- `/cost` command — estimate cost based on token usage and model pricing
+- Better error message for `/import` without valid ID (currently falls through to SendMessage)

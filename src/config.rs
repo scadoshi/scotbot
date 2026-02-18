@@ -1,8 +1,9 @@
 use dotenvy::dotenv;
-#[derive(Debug, Clone)]
+
 pub struct Config {
     anthropic_api_key: String,
 }
+
 impl Config {
     pub fn from_env() -> anyhow::Result<Self> {
         dotenv().ok();

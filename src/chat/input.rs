@@ -1,16 +1,18 @@
 #[derive(Debug, Clone, Default)]
 pub enum Input {
-    ExitCommand,
-    HistoryCommand,
-    TokensCommand,
-    ClearCommand,
-    ModelCommand,
-    HelpCommand,
-    SummarizeCommand,
-    CompactCommand,
-    Message(String),
+    ExitProcess,
+    ShowChatHistory,
+    SaveChatHistory,
+    ImportChatHistory(u16),
+    ShowTokenUsage,
+    ClearContext,
+    SwitchModel,
+    ShowHelpMessage,
+    ShowContextSummary,
+    CompactContext,
+    SendMessage(String),
     #[default]
-    Empty,
+    None,
 }
 
 impl<T> From<T> for Input
@@ -20,25 +22,34 @@ where
     fn from(value: T) -> Self {
         let value = value.as_ref().trim().to_lowercase();
         if value == "/exit" {
-            Self::ExitCommand
+            Self::ExitProcess
         } else if value == "/history" {
-            Self::HistoryCommand
+            Self::ShowChatHistory
+        } else if value == "/save" {
+            Self::SaveChatHistory
+        } else if value.contains("/import")
+            && let Some(id) = value
+                .split_whitespace()
+                .flat_map(|v| v.parse::<u16>().ok())
+                .next()
+        {
+            Self::ImportChatHistory(id)
         } else if value == "/tokens" {
-            Self::TokensCommand
+            Self::ShowTokenUsage
         } else if value == "/clear" {
-            Self::ClearCommand
+            Self::ClearContext
         } else if value == "/model" {
-            Self::ModelCommand
+            Self::SwitchModel
         } else if value == "/help" {
-            Self::HelpCommand
+            Self::ShowHelpMessage
         } else if value == "/summarize" {
-            Self::SummarizeCommand
+            Self::ShowContextSummary
         } else if value == "/compact" {
-            Self::CompactCommand
+            Self::CompactContext
         } else if value.is_empty() {
-            Self::Empty
+            Self::None
         } else {
-            Self::Message(value)
+            Self::SendMessage(value)
         }
     }
 }
@@ -48,9 +59,9 @@ impl Input {
         Self::default()
     }
     pub fn clear(&mut self) {
-        *self = Self::Empty;
+        *self = Self::None;
     }
-    pub fn is_empty(&self) -> bool {
-        matches!(self, Input::Empty)
+    pub fn is_none(&self) -> bool {
+        matches!(self, Input::None)
     }
 }

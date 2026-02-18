@@ -2,12 +2,12 @@ use rig::message::Message;
 
 use crate::chat;
 
-pub trait SummarizeContext {
-    fn summarize_context(&mut self) -> impl Future<Output = anyhow::Result<()>>;
+pub trait ShowContextSummary {
+    fn show_context_summary(&mut self) -> impl Future<Output = anyhow::Result<()>>;
 }
 
-impl SummarizeContext for chat::State {
-    async fn summarize_context(&mut self) -> anyhow::Result<()> {
+impl ShowContextSummary for chat::State {
+    async fn show_context_summary(&mut self) -> anyhow::Result<()> {
         self.clear_input();
         if self.history().is_empty() {
             println!("Nothing to summarize");

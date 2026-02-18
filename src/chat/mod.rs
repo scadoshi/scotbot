@@ -4,7 +4,7 @@ use crate::{
     anthropic::{GetAnthropicModels, ModelInfo},
     chat::input::Input,
     config::Config,
-    ui::horizontal_line,
+    ui::{horizontal_line, welcome_message},
 };
 use futures::StreamExt;
 use rig::{
@@ -19,11 +19,12 @@ use rig::{
     },
     streaming::{StreamedAssistantContent, StreamingChat},
 };
-use std::io::stdin;
+use std::collections::HashSet;
 
 pub static PREAMBLE: &str = include_str!("preamble.txt");
 
 pub struct State {
+    id: u16,
     config: Config,
     model_options: Vec<ModelInfo>,
     agent: Agent<CompletionModel>,
@@ -33,8 +34,34 @@ pub struct State {
     total_output_tokens_used: usize,
 }
 
+pub const CHATS_DIR_NAME: &str = "chats";
+
+fn next_chat_id() -> anyhow::Result<u16> {
+    std::fs::create_dir_all(CHATS_DIR_NAME)?;
+    let existing_chat_ids: HashSet<u16> = std::fs::read_dir(CHATS_DIR_NAME)?
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
+        .filter(|ent| ent.path().extension().and_then(|ostr| ostr.to_str()) == Some("json"))
+        .flat_map(|ent| {
+            ent.path()
+                .file_prefix()
+                .and_then(|prfx| prfx.to_str())
+                .and_then(|str| str.parse::<u16>().ok())
+        })
+        .collect();
+    match (0..u16::MAX).find(|id| !existing_chat_ids.contains(id)) {
+        Some(id) => Ok(id),
+        None => Err(anyhow::anyhow!(
+            "Chat count has hit its limit of {}",
+            u16::MAX
+        )),
+    }
+}
+
 impl State {
     pub async fn new() -> anyhow::Result<Self> {
+        let id = next_chat_id()?;
+        welcome_message(id);
         let config = Config::from_env()?;
         let model_options = config.get_models().await?;
         let agent: Agent<CompletionModel>;
@@ -47,7 +74,7 @@ impl State {
         loop {
             println!("Select a model");
             horizontal_line();
-            stdin().read_line(&mut input)?;
+            std::io::stdin().read_line(&mut input)?;
             if let Some((_, ModelInfo { id, .. })) = model_options
                 .iter()
                 .enumerate()
@@ -68,6 +95,7 @@ impl State {
             }
         }
         Ok(Self {
+            id,
             config,
             model_options,
             agent,
@@ -76,6 +104,9 @@ impl State {
             total_input_tokens_used: 0,
             total_output_tokens_used: 0,
         })
+    }
+    pub fn id(&self) -> u16 {
+        self.id
     }
     pub fn config(&self) -> &Config {
         &self.config
@@ -154,12 +185,44 @@ impl State {
     pub fn add_to_history(&mut self, message: impl Into<Message>) {
         self.history.push(message.into());
     }
+    pub fn save_history_to_file(&self) -> anyhow::Result<()> {
+        let file_path = format!("{}/{}.json", CHATS_DIR_NAME, self.id());
+        let file = std::fs::File::create(file_path)?;
+        let history_json = serde_json::to_value(self.history())?;
+        serde_json::to_writer_pretty(file, &history_json)?;
+        Ok(())
+    }
+    pub fn append_history_from_file_infallible(&mut self, id: u16) {
+        let file_path = format!("{}/{}.json", CHATS_DIR_NAME, id);
+        let file_result = std::fs::File::open(file_path);
+        match file_result {
+            Ok(mut file) => {
+                println!("History with ID: {} found!", id);
+                let file_str = {
+                    let mut file_str = String::new();
+                    let Ok(_) =
+                        <std::fs::File as std::io::Read>::read_to_string(&mut file, &mut file_str)
+                    else {
+                        println!("Failed to read file");
+                        return;
+                    };
+                    file_str
+                };
+                let Ok(history) = serde_json::from_str::<Vec<Message>>(&file_str) else {
+                    println!("Failed to serialize file to `Vec<Message>`");
+                    return;
+                };
+                self.history.extend(history);
+            }
+            Err(e) => println!("Failed to get history: {}", e),
+        }
+    }
     pub fn input(&self) -> &Input {
         &self.input
     }
     pub fn get_input(&mut self) {
         let mut input_str = String::new();
-        match stdin().read_line(&mut input_str) {
+        match std::io::stdin().read_line(&mut input_str) {
             Ok(_) => self.input = Input::from(input_str),
             Err(e) => {
                 eprintln!("Error: {}", e);
