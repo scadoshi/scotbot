@@ -5,23 +5,25 @@ use rig::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct AddArgs {
+pub struct SubtractArgs {
     pub lhs: i64,
     pub rhs: i64,
 }
 
-pub struct Adder;
+pub struct Subtract;
 
-impl Tool for Adder {
-    const NAME: &'static str = "add_numbers";
-    type Args = AddArgs;
+impl Tool for Subtract {
+    const NAME: &'static str = "subtract";
+    type Args = SubtractArgs;
     type Output = i64;
     type Error = ToolError;
 
     async fn definition(&self, _promp: String) -> ToolDefinition {
         ToolDefinition {
             name: Self::NAME.to_string(),
-            description: "returns sum of two given numbers, lhs and rhs".to_string(),
+            description:
+                "returns difference of two given numbers, lhs and rhs, rhs is subtracted from lhs"
+                    .to_string(),
             parameters: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -33,6 +35,6 @@ impl Tool for Adder {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        Ok(args.lhs + args.rhs)
+        Ok(args.lhs - args.rhs)
     }
 }
