@@ -1,12 +1,12 @@
 # marvin
 
-A small CLI chat application built to learn the [Rig](https://github.com/21-labs/rig) framework in Rust.
+A small CLI chat application built to learn the [Rig](https://github.com/0xPlaygrounds/rig) framework in Rust.
 
 ## What it does
 
 Runs an interactive terminal chat loop backed by Anthropic's Claude via Rig. Supports a configurable preamble (system prompt) in `src/chat/preamble.txt` and maintains conversation history across turns.
 
-### Commands
+### User Commands
 
 | Command | Description |
 |---------|-------------|
@@ -21,11 +21,32 @@ Runs an interactive terminal chat loop backed by Anthropic's Claude via Rig. Sup
 | `/help` | List all available commands |
 | `/exit` | Print farewell message and end the session |
 
+### Agent Tools
+
+The AI agent can invoke the following tools during conversation:
+
+**Math Tools**
+| Tool | Description |
+|------|-------------|
+| `add` | Add two numbers |
+| `subtract` | Subtract two numbers |
+| `multiply` | Multiply two numbers |
+| `divide` | Divide two numbers |
+
+**Web Tools** (via [Tavily API](https://tavily.com))
+| Tool | Description |
+|------|-------------|
+| `search_web` | Search the web for current information |
+| `extract_url` | Extract clean content from specific URLs |
+| `crawl_website` | Crawl a website and extract content from linked pages |
+| `map_website` | Discover all URLs on a website without extracting content |
+
 ## Setup
 
 1. Clone the repo and make sure you have Rust installed (`rustup` / `cargo`).
 2. Copy `.env.example` to `.env` and fill in your values:
    - `ANTHROPIC_API_KEY` — your Anthropic API key
+   - `TAVILY_API_KEY` — your Tavily API key (for web tools)
 3. Build and run:
 
 ```sh
