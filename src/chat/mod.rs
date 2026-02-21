@@ -3,7 +3,7 @@ pub mod input;
 pub use input::ChatInput;
 
 use crate::{
-    agent_tools::math_tools,
+    agent_tools::{math_tools, web::web_tools},
     anthropic::{get_models::GetAnthropicModels, ModelInfo},
     chat::config::Config,
     ui::{horizontal_line, welcome_message},
@@ -86,6 +86,7 @@ impl Chat {
                     .name("Marvin")
                     .preamble(PREAMBLE)
                     .tools(math_tools())
+                    .tools(web_tools())
                     .default_max_turns(100)
                     .build();
                 horizontal_line();
